@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	"github.com/BurntSushi/toml"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/kelseyhightower/confd/backends"
 	"github.com/kelseyhightower/confd/log"
 	util "github.com/kelseyhightower/confd/util"
@@ -61,6 +62,7 @@ type TemplateResource struct {
 }
 
 var ErrEmptySrc = errors.New("empty src template")
+var sprigOverlappingFuncs = [...]string{"base", "split", "dir", "join", "contains", "replace", "trimSuffix", "reverse", "add", "sub", "div", "mod", "mul", "atoi", "seq"}
 
 // NewTemplateResource creates a TemplateResource.
 func NewTemplateResource(path string, config Config) (*TemplateResource, error) {
@@ -85,6 +87,13 @@ func NewTemplateResource(path string, config Config) (*TemplateResource, error) 
 	tr.funcMap = newFuncMap()
 	tr.store = memkv.New()
 	tr.syncOnly = config.SyncOnly
+	sprigFuncMap := sprig.TxtFuncMap()
+
+	for _, dupFunc := range sprigOverlappingFuncs {
+		delete(sprigFuncMap, dupFunc)
+	}
+
+	addFuncs(tr.funcMap, sprigFuncMap)
 	addFuncs(tr.funcMap, tr.store.FuncMap)
 
 	if config.Prefix != "" {
