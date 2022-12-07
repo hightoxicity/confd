@@ -62,7 +62,6 @@ type TemplateResource struct {
 }
 
 var ErrEmptySrc = errors.New("empty src template")
-var sprigOverlappingFuncs = [...]string{"base", "split", "dir", "join", "contains", "replace", "trimSuffix", "reverse", "add", "sub", "div", "mod", "mul", "atoi", "seq"}
 
 // NewTemplateResource creates a TemplateResource.
 func NewTemplateResource(path string, config Config) (*TemplateResource, error) {
@@ -89,11 +88,10 @@ func NewTemplateResource(path string, config Config) (*TemplateResource, error) 
 	tr.syncOnly = config.SyncOnly
 	sprigFuncMap := sprig.TxtFuncMap()
 
-	for _, dupFunc := range sprigOverlappingFuncs {
-		delete(sprigFuncMap, dupFunc)
+	for funcName, sprigFunc := range sprigFuncMap {
+		addFunc(tr.funcMap, "sprig"+strings.Title(funcName), sprigFunc)
 	}
 
-	addFuncs(tr.funcMap, sprigFuncMap)
 	addFuncs(tr.funcMap, tr.store.FuncMap)
 
 	if config.Prefix != "" {
